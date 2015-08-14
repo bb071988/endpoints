@@ -30,26 +30,44 @@ def post_get(id):
     return Response(data, 200, mimetype="application/json")
 
     
+# @app.route("/api/posts", methods=["GET"])  ### superseded code
+# @decorators.accept("application/json")
+# def posts_get():
+#     """ Get a list of posts """
+
+#     # Get the posts from the database
+#     posts = session.query(models.Post).order_by(models.Post.id)
+
+#     # Convert the posts to JSON and return a response
+#     data = json.dumps([post.as_dictionary() for post in posts])
+#     return Response(data, 200, mimetype="application/json")
+    
 @app.route("/api/posts", methods=["GET"])
 @decorators.accept("application/json")
 def posts_get():
     """ Get a list of posts """
-
-    # Get the posts from the database
-    posts = session.query(models.Post).order_by(models.Post.id)
+    # Get the querystring arguments
+    title_like = request.args.get("title_like")
+    body_like = request.args.get("body_like")
+   
+    # Get and filter the posts from the database
+    posts = session.query(models.Post)
+    if title_like and body_like:
+        posts = posts.filter(models.Post.title.contains(title_like))
+        posts = posts.filter(models.Post.body.contains(body_like))
+    elif title_like:
+        posts = posts.filter(models.Post.title.contains(title_like))
+    elif body_like:
+        posts = posts.filter(models.Post.body.contains(body_like))
+        
+        
+    posts = posts.order_by(models.Post.id)
 
     # Convert the posts to JSON and return a response
     data = json.dumps([post.as_dictionary() for post in posts])
     return Response(data, 200, mimetype="application/json")
     
 
-# ## added to get past 405 error
-# @app.endpoint('index')
-# def index():
-#     return request.method
-
-
-    
 @app.route("/api/posts/<int:id>", methods =["DELETE"])
 def post_delete(id):
     post = session.query(models.Post).get(id)

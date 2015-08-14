@@ -153,6 +153,7 @@ class TestAPI(unittest.TestCase):
         
         
         #post = json.loads(response.data)
+        print "hello"
         
         with open("delete_post1.txt", 'w+') as testfile:
             #testfile.write(json.dumps(post))
@@ -162,23 +163,61 @@ class TestAPI(unittest.TestCase):
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.mimetype, "application/json")
 
-        #post = json.loads(response.data)
-        # self.assertEqual(post["title"], "Example Post B")
-        # self.assertEqual(post["body"], "Still a test")
-        
-#         @app.route("/post/<int:id>/delete", methods =["GET"])
-# def delete_post_get(id):
-#     post = session.query(Post).get(id)
-#     if post is None:
-#         abort(404)
-#     else:
-#         if post.author_id == current_user.id:
-#             session.delete(post)
-#             session.commit()
-#             return redirect(url_for("posts"))
-#         else:
-#             abort(403)
-        
+    def test_get_posts_with_title(self):
+            """ Filtering posts by title """
+            postA = models.Post(title="Post with bells", body="Just a test")
+            postB = models.Post(title="Post with whistles", body="Still a test")
+            postC = models.Post(title="Post with bells and whistles",
+                                body="Another test")
+    
+            session.add_all([postA, postB, postC])
+            session.commit()
+    
+            response = self.client.get("/api/posts?title_like=whistles",
+                headers=[("Accept", "application/json")]
+            )
+    
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.mimetype, "application/json")
+    
+            posts = json.loads(response.data)
+            self.assertEqual(len(posts), 2)
+    
+            post = posts[0]
+            self.assertEqual(post["title"], "Post with whistles")
+            self.assertEqual(post["body"], "Still a test")
+    
+            post = posts[1]
+            self.assertEqual(post["title"], "Post with bells and whistles")
+            self.assertEqual(post["body"], "Another test")
+            
+            
+    def test_get_posts_with_title_body(self):
+            """ Filtering posts by title """
+            postA = models.Post(title="Post with bells", body="Just a test")
+            postB = models.Post(title="Post with whistles", body="Still a test")
+            postC = models.Post(title="Post with bells and whistles",
+                                body="bells test")
+    
+            session.add_all([postA, postB, postC])
+            session.commit()
+    
+            response = self.client.get("/api/posts?title_like=whistles&body_like=bells",
+                headers=[("Accept", "application/json")]
+            )
+            
+          
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.mimetype, "application/json")
+    
+            posts = json.loads(response.data)
+            self.assertEqual(len(posts), 1)
+    
+            post = posts[0]
+            self.assertEqual(post["title"], "Post with bells and whistles")
+            self.assertEqual(post["body"], "bells test")
+    
+            
     def tearDown(self):
         """ Test teardown """
         session.close()
